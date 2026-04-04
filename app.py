@@ -73,5 +73,4 @@ with st.form("main_form"):
     st.divider()
     st.subheader("【未成年の場合のみ入力】")
     pa = st.text_input("親権者 住所", placeholder="参加者と住所が異なる場合のみ入力")
-    pn = st.text_input("親権者 氏名", placeholder="保護者の氏名を記入")
-    pp = st.text_input("親権者 電話番号", placeholder="090-2222-2222
+    pn = st.text_input("親権者 氏名",
