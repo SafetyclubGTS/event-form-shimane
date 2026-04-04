@@ -27,7 +27,8 @@ def get_address(zipcode):
             return ""
     return ""
 
-st.title("二輪車安全運転練習会 申込フォーム")
+# タイトル（会と申の間で改行）
+st.title("二輪車安全運転練習会\n申込フォーム")
 
 # セッション状態（入力保持）の初期化
 if "auto_addr" not in st.session_state:
@@ -111,7 +112,6 @@ if submitted:
         p.setFont("HeiseiKakuGo-W5", 14)
         p.drawCentredString(300, 700, "誓   約   書")
         
-        # 誓約文面
         p.setFont("HeiseiKakuGo-W5", 11)
         ty = 670
         p.drawString(70, ty, "私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)")
@@ -119,45 +119,7 @@ if submitted:
         p.drawString(70, ty - 40, "は全て自己負担とし主催者に責任を追及したり、損害賠償を要求しないことを誓約")
         p.drawString(70, ty - 60, "します。")
         
-        # 赤字強調
         p.setFillColor(colors.red)
         p.drawString(70, ty - 90, "※原則として参加車両は任意保険への加入をお願いします、教習所内の施設を破壊した")
         p.drawString(70, ty - 110, "場合、自己負担で賠償となります。")
-        p.drawString(70, ty - 130, "(教習車・信号機等は数百万円の賠償となります)")
-        
-        p.setFillColor(colors.black)
-        
-        today = datetime.now()
-        p.drawString(70, ty - 160, f"令和  {today.year-2018} 年  {today.month} 月  {today.day} 日")
-        
-        # 署名欄
-        p.setFont("HeiseiKakuGo-W5", 12)
-        yi = ty - 210
-        p.drawString(70, yi, "参加者署名")
-        p.drawString(90, yi - 30, f"住所: {address}")
-        p.drawString(90, yi - 60, f"氏名: {name}")
-        p.drawString(350, yi - 60, f"血液型: {blood_type}")
-        p.drawString(90, yi - 90, f"電話: {phone}")
-        p.drawString(90, yi - 120, f"緊急連絡先: {emergency_contact}")
-        
-        # 親権者欄
-        yp = yi - 170
-        p.drawString(70, yp, "親権者署名(未成年参加者は必須)")
-        p.drawString(90, yp - 30, f"住所: {parent_address}")
-        p.drawString(90, yp - 60, f"氏名: {parent_name}")
-        p.drawString(90, yp - 90, f"電話: {parent_phone}")
-        
-        # 個人情報保護に関する追記（PDF最下部）
-        p.setFont("HeiseiKakuGo-W5", 9)
-        p.drawString(70, 50, "※本フォームで取得した個人情報は、本練習会の運営および緊急時の連絡以外の目的には使用いたしません。")
-        
-        p.showPage()
-        p.save()
-        
-        st.success("申込手続きが完了しました。以下のボタンから保存してください。")
-        st.download_button(
-            label="誓約書PDFを保存する", 
-            data=buffer.getvalue(), 
-            file_name=f"GTS誓約書_{name}.pdf", 
-            mime="application/pdf"
-        )
+        p.drawString(70, ty - 130
