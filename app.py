@@ -6,17 +6,25 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 import io
 import requests
+import base64
+import json
 from datetime import datetime
+
+# --- 【最新】デプロイ済みのGASウェブアプリURL ---
+GAS_URL = "https://script.google.com/macros/s/AKfycbxB94Sxkdwg44Apb36p-Ibrne9e5nYDtpgiSImuXjYrl5Tp1L14mVQKYVsjVCn5zUGD/exec"
 
 # --- 1. 基本設定 ---
 st.set_page_config(page_title="GTS参加申込", page_icon="🏍️")
+
+# PDF用日本語フォントの登録
 pdfmetrics.registerFont(UnicodeCIDFont('HeiseiKakuGo-W5'))
 
 def get_address(zipcode):
+    """郵便番号から住所を自動取得する外部API連携"""
     if len(zipcode) == 7:
         try:
             u = f"https://zipcloud.ibsnet.co.jp/api/search?zipcode={zipcode}"
-            res = requests.get(u)
+            res = requests.get(u, timeout=5)
             d = res.json()
             if d["results"]:
                 r = d["results"][0]
@@ -25,7 +33,7 @@ def get_address(zipcode):
             return ""
     return ""
 
-# --- 2. 誓約書の文言（一字一句再現） ---
+# --- 2. 誓約書の文言（原本再現） ---
 S1 = "私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)"
 S2 = "の指示を守ります。また、受講中に物損事故等が発生した場合、それに伴う損失"
 S3 = "は全て自己負担とし主催者に責任を追及したり、損害賠償を要求しないことを誓約"
@@ -38,14 +46,14 @@ W3 = "(教習車・信号機等は数百万円の賠償となります)"
 P1 = "※本フォームで取得した個人情報は、本練習会の運営および緊急時の連絡以外の"
 P2 = "目的には使用いたしません。"
 
-# --- 3. アプリ画面 ---
-# タイトルを大きく表示
+# --- 3. アプリ画面UI ---
 st.title("GTS二輪車安全運転練習会\n申込フォーム")
 
+# 住所の自動入力状態管理
 if "auto_addr" not in st.session_state:
     st.session_state.auto_addr = ""
 
-# 開催日（サブヘッダーの大きさに合わせる）
+# 開催日入力
 st.subheader("【開催日】")
 n = datetime.now()
 c1, c2, c3 = st.columns(3)
@@ -58,15 +66,13 @@ with c3:
 
 ev_date = f"令和{sy - 2018}年 {sm}月 {sd}日"
 
-# 住所検索
+# 基本情報入力
 st.subheader("【住所・氏名・電話番号・血液型・緊急時の連絡先】")
 z_in = st.text_input("郵便番号（7桁・ハイフンなし）", max_chars=7, placeholder="6900000")
 if st.button("住所を自動入力する"):
     st.session_state.auto_addr = get_address(z_in)
 
-# --- 4. メインフォーム（文字サイズと入力例を調整） ---
 with st.form("main_form"):
-    # 全ての項目に詳細な placeholder（薄い入力例）を追加
     u_ad = st.text_input(
         "住所（番地まで正確に入力してください）", 
         value=st.session_state.auto_addr, 
@@ -96,92 +102,98 @@ with st.form("main_form"):
     st.info(f"{P1}{P2}")
     
     agree = st.checkbox("誓約事項および個人情報の取り扱いに同意し、申し込みます")
-    
-    # 送信ボタン
-    submit = st.form_submit_button("上記の内容で申し込む（PDF作成）")
+    submit = st.form_submit_button("上記の内容で申し込む（PDF作成・自動保存）")
 
-# --- 5. PDF生成処理 ---
+# --- 4. PDF生成 & Googleドライブ送信処理 ---
 if submit:
     if not agree:
         st.error("同意チェックが必要です。")
     elif not u_na:
         st.error("氏名は必須です。")
     else:
+        # メモリ上にPDF作成
         buf = io.BytesIO()
         pdf = canvas.Canvas(buf, pagesize=A4)
         
-        # ヘッダー情報の準備
-        title_t = "件名: GTS二輪車安全運転練習会"
-        host_t = "主催者: GTS (グランドツアー山陰)"
-        date_t = f"開催日: {ev_date}"
-        place_t = "会場名: 島根県運転免許センター"
-        
+        # ヘッダー描画
         pdf.setFont("HeiseiKakuGo-W5", 16)
-        pdf.drawString(70, 800, title_t)
+        pdf.drawString(70, 800, "件名: GTS二輪車安全運転練習会")
         pdf.setFont("HeiseiKakuGo-W5", 12)
-        pdf.drawString(70, 780, host_t)
-        pdf.drawString(70, 760, date_t)
-        pdf.drawString(70, 740, place_t)
+        pdf.drawString(70, 780, "主催者: GTS (グランドツアー山陰)")
+        pdf.drawString(70, 760, f"開催日: {ev_date}")
+        pdf.drawString(70, 740, "会場名: 島根県運転免許センター")
         
         pdf.setFont("HeiseiKakuGo-W5", 14)
         pdf.drawCentredString(300, 700, "誓   約   書")
         
-        # 誓約文の描画
+        # 誓約文
         pdf.setFont("HeiseiKakuGo-W5", 11)
         pdf.drawString(70, 670, S1)
         pdf.drawString(70, 650, S2)
         pdf.drawString(70, 630, S3)
         pdf.drawString(70, 610, S4)
         
-        # 赤字警告の描画
+        # 警告（赤字）
         pdf.setFillColor(colors.red)
         pdf.drawString(70, 580, W1)
         pdf.drawString(70, 560, W2)
         pdf.drawString(70, 540, W3)
         
-        # 署名欄
+        # 署名欄と日付
         pdf.setFillColor(colors.black)
         t = datetime.now()
         y_r = t.year - 2018
-        now_t = f"令和 {y_r} 年 {t.month} 月 {t.day} 日"
-        pdf.drawString(70, 500, now_t)
+        pdf.drawString(70, 500, f"令和 {y_r} 年 {t.month} 月 {t.day} 日")
         
         pdf.setFont("HeiseiKakuGo-W5", 12)
         pdf.drawString(70, 460, "参加者署名")
-        
-        # 変数化して描画（カッコのエラーを防止）
-        d_ad = f"住所: {u_ad}"
-        d_na = f"氏名: {u_na}"
-        d_bl = f"血液型: {u_bl}"
-        d_ph = f"電話: {u_ph}"
-        d_em = f"緊急連絡先: {u_em}"
-        
-        pdf.drawString(90, 430, d_ad)
-        pdf.drawString(90, 400, d_na)
-        pdf.drawString(350, 400, d_bl)
-        pdf.drawString(90, 370, d_ph)
-        pdf.drawString(90, 340, d_em)
+        pdf.drawString(90, 430, f"住所: {u_ad}")
+        pdf.drawString(90, 400, f"氏名: {u_na}")
+        pdf.drawString(350, 400, f"血液型: {u_bl}")
+        pdf.drawString(90, 370, f"電話: {u_ph}")
+        pdf.drawString(90, 340, f"緊急連絡先: {u_em}")
         
         # 親権者欄
         pdf.drawString(70, 290, "親権者署名(未成年参加者は必須)")
-        d_pad = f"住所: {pa}"
-        d_pna = f"氏名: {pn}"
-        d_pph = f"電話: {pp}"
-        pdf.drawString(90, 260, d_pad)
-        pdf.drawString(90, 230, d_pna)
-        pdf.drawString(90, 200, d_pph)
+        pdf.drawString(90, 260, f"住所: {pa}")
+        pdf.drawString(90, 230, f"氏名: {pn}")
+        pdf.drawString(90, 200, f"電話: {pp}")
         
-        # フッター個人情報
+        # 個人情報
         pdf.setFont("HeiseiKakuGo-W5", 9)
         pdf.drawString(70, 50, f"{P1}{P2}")
         
         pdf.showPage()
         pdf.save()
         
-        st.success("申込手続きが完了しました。")
+        pdf_bytes = buf.getvalue()
+
+        # --- 自動保存処理 ---
+        with st.spinner("Googleドライブに保存中..."):
+            try:
+                pdf_b64 = base64.b64encode(pdf_bytes).decode('utf-8')
+                payload = {
+                    "fileName": f"誓約書_{u_na}_{sy}{sm:02}{sd:02}.pdf",
+                    "pdfData": pdf_b64
+                }
+                response = requests.post(
+                    GAS_URL, 
+                    data=json.dumps(payload), 
+                    headers={'Content-Type': 'application/json'}, 
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    st.success("手続き完了！Googleドライブに保存されました。")
+                else:
+                    st.warning("自動保存に失敗しました。下のボタンから手動保存してください。")
+            except Exception as e:
+                st.error(f"システムエラー: {e}")
+
+        # 手動ダウンロードボタン
         st.download_button(
-            label="誓約書PDFを保存する", 
-            data=buf.getvalue(), 
+            label="誓約書PDFを自分の端末に保存", 
+            data=pdf_bytes, 
             file_name=f"GTS誓約書_{u_na}.pdf", 
             mime="application/pdf"
         )
