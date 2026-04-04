@@ -184,7 +184,7 @@ if submit:
                 )
                 
                 if response.status_code == 200:
-                    st.success("手続き完了！Googleドライブに保存されました。")
+                    st.success("手続き完了！")
                 else:
                     st.warning("自動保存に失敗しました。下のボタンから手動保存してください。")
             except Exception as e:
