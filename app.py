@@ -7,88 +7,85 @@ import io
 from datetime import datetime
 
 # ページ設定
-st.set_page_config(page_title="GTS参加申込", page_icon="🏍️")
+st.set_page_config(page_title="GTS誓約書作成", page_icon="🏍️")
 
-# 日本語フォント（平成角ゴシック）の登録
+# 日本語フォントの登録
 pdfmetrics.registerFont(UnicodeCIDFont('HeiseiKakuGo-W5'))
 
-st.title("二輪車安全運転練習会 参加申込")
-st.subheader("主催：GTS（グランドツアー山陰）")
+st.title("二輪車安全運転練習会 申込フォーム")
 
 # 入力フォーム
 with st.form("entry_form"):
-    st.info("島根県運転免許センターでの練習会用。入力内容はPDF作成後に消去されます。")
+    st.info("資料に基づき、誓約書の文言を正確に反映したPDFを作成します。")
+    
+    # 開催情報入力
+    event_date = st.text_input("開催日（例：令和8年5月10日）", placeholder="令和  年  月  日")
     
     col1, col2 = st.columns(2)
     with col1:
-        name = st.text_input("氏名", placeholder="島根 太郎")
-        blood_type = st.selectbox("血液型", ["", "A", "B", "O", "AB"], index=0)
+        name = st.text_input("氏名")
+        blood_type = st.selectbox("血液型", ["", "A", "B", "O", "AB"])
     with col2:
-        phone = st.text_input("電話番号", placeholder="090-0000-0000")
+        phone = st.text_input("電話番号")
         
-    address = st.text_input("住所", placeholder="島根県...")
-    emergency_contact = st.text_input("緊急連絡先（氏名・続柄・電話）")
-
-    st.warning("【誓約事項】\n私は、この練習会に参加するに当たり、主催者の指示を守ります。また、受講中に物損事故等が発生した場合、それに伴う損失は全て自己負担とし主催者に責任を追及したり、損害賠償を要求しないことを誓約します。\n\n※原則として参加車両は任意保険への加入をお願いします。教習所内の施設（教習車・信号機等）を破壊した場合、自己負担（数百万円単位）での賠償となります。")
+    address = st.text_input("住所")
+    emergency_contact = st.text_input("緊急連絡先")
     
-    agree = st.checkbox("上記の誓約内容を理解し、同意します")
+    st.divider()
+    st.subheader("未成年の場合のみ入力")
+    parent_name = st.text_input("親権者氏名")
+    parent_address = st.text_input("親権者住所")
+    parent_phone = st.text_input("親権者電話")
+
+    st.divider()
+    st.warning("以下の誓約内容を必ずご確認ください。")
+    st.write("""
+    私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)
+    の指示を守ります。また、受講中に物損事故等が発生した場合、それに伴う損失
+    は全て自己負担とし主催者に責任を追及したり、損害賠償を要求しないことを誓約
+    します。
+    ※原則として参加車両は任意保険への加入をお願いします、教習所内の施設を破壊した
+    場合、自己負担で賠償となります。(教習車・信号機等は数百万円の賠償となります)
+    """)
+    
+    agree = st.checkbox("上記の内容を全て確認し、誓約いたします")
 
     submitted = st.form_submit_button("誓約書PDFを作成する")
 
 # PDF生成処理
 if submitted:
     if not agree:
-        st.error("誓約事項への同意が必要です。")
-    elif not name or not phone or not address:
-        st.error("氏名・住所・電話番号は必須項目です。")
+        st.error("誓約事項への同意（チェック）が必要です。")
+    elif not name:
+        st.error("氏名の入力は必須です。")
     else:
         buffer = io.BytesIO()
         p = canvas.Canvas(buffer, pagesize=A4)
         
-        # 1. タイトルと主催者
-        p.setFont("HeiseiKakuGo-W5", 18)
-        p.drawCentredString(300, 800, "二輪車安全運転練習会 誓約書")
+        # 1. ヘッダー情報
+        p.setFont("HeiseiKakuGo-W5", 16)
+        p.drawString(70, 800, "件名:二輪車安全運転練習会")
         p.setFont("HeiseiKakuGo-W5", 12)
-        p.drawString(70, 770, "主催者: GTS (グランドツアー山陰)")
-        p.drawString(70, 750, "会場名: 島根県運転免許センター")
+        p.drawString(70, 780, "主催者: GTS (グランドツアー山陰)")
+        p.drawString(70, 760, f"開催日:{event_date if event_date else '令和    年   月   日'}")
+        p.drawString(70, 740, "会場名:島根県運転免許センター")
         
-        # 2. 誓約文面（OCR資料に基づき忠実に再現）
+        # 2. 誓約文言（一字一句再現）
+        p.setFont("HeiseiKakuGo-W5", 14)
+        p.drawCentredString(300, 700, "誓   約   書")
+        
         p.setFont("HeiseiKakuGo-W5", 11)
-        text_box = p.beginText(70, 710)
-        lines = [
-            "私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)の指示を守ります。",
-            "また、受講中に物損事故等が発生した場合、それに伴う損失は全て自己負担とし主催者に責任を追及したり、",
-            "損害賠償を要求しないことを誓約します。",
-            "",
-            "※原則として参加車両は任意保険への加入をお願いします。教習所内の施設を破壊した場合、",
-            "  自己負担で賠償となります。(教習車・信号機等は数百万円の賠償となります)"
+        text_y = 670
+        誓約文 = [
+            "私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)",
+            "の指示を守ります。また、受講中に物損事故等が発生した場合、それに伴う損失",
+            "は全て自己負担とし主催者に責任を追及したり、損害賠償を要求しないことを誓約",
+            "します。",
+            "※原則として参加車両は任意保険への加入をお願いします、教習所内の施設を破壊した",
+            "場合、自己負担で賠償となります。(教習車・信号機等は数百万円の賠償となります)"
         ]
-        for line in lines:
-            text_box.textLine(line)
-        p.drawText(text_box)
+        for line in 誓約文:
+            p.drawString(70, text_y, line)
+            text_y -= 20
         
-        # 3. 参加者情報
-        p.setFont("HeiseiKakuGo-W5", 12)
-        y = 580
-        p.drawString(70, y, f"作成日: {datetime.now().strftime('%Y年 %m月 %d日')}")
-        p.drawString(70, y-40, f"住所: {address}")
-        p.drawString(70, y-70, f"氏名: {name}")
-        p.drawString(350, y-70, f"血液型: {blood_type} 型")
-        p.drawString(70, y-100, f"電話: {phone}")
-        p.drawString(70, y-130, f"緊急連絡先: {emergency_contact}")
-        
-        # 署名欄の枠（「印」は削除しました）
-        p.rect(65, y-80, 300, 25) 
-        p.setFont("HeiseiKakuGo-W5", 8)
-        p.drawString(70, y-88, "参加者署名（デジタル入力済み）")
-        
-        p.showPage()
-        p.save()
-        
-        st.success("誓約書PDFが作成されました。")
-        st.download_button(
-            label="PDFをダウンロードして保存",
-            data=buffer.getvalue(),
-            file_name=f"GTS誓約書_{name}.pdf",
-            mime="application/pdf"
-        )
+        # 3. 日付と署名欄
