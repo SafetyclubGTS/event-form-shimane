@@ -8,12 +8,15 @@ import io
 import requests
 import base64
 import json
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 # --- 設定 ---
 GAS_URL = "https://script.google.com/macros/s/AKfycbxB94Sxkdwg44Apb36p-Ibrne9e5nYDtpgiSImuXjYrl5Tp1L14mVQKYVsjVCn5zUGD/exec"
 st.set_page_config(page_title="GTS参加申込", page_icon="🏍️")
 pdfmetrics.registerFont(UnicodeCIDFont('HeiseiKakuGo-W5'))
+
+# 日本標準時 (JST) の設定
+JST = timezone(timedelta(hours=+9))
 
 def get_address(zipcode):
     """郵便番号から住所を自動取得"""
@@ -45,7 +48,8 @@ if "auto_addr" not in st.session_state:
     st.session_state.auto_addr = ""
 
 st.subheader("【開催日】")
-n = datetime.now()
+# 日本時刻での現在日時を取得
+n = datetime.now(JST)
 c1, c2, c3 = st.columns(3)
 with c1:
     sy = st.selectbox("年", [2026, 2027], index=0)
@@ -93,7 +97,8 @@ if submit:
     if not agree or not u_na:
         st.error("氏名の入力と同意チェックは必須です。")
     else:
-        now = datetime.now()
+        # 送信時の日本時刻を取得
+        now = datetime.now(JST)
         ts = now.strftime("%Y-%m-%d %H:%M:%S")
         eid = now.strftime("%Y%m%d-%H%M%S")
         
@@ -126,6 +131,7 @@ if submit:
         
         pdf.setFont("HeiseiKakuGo-W5", 8)
         pdf.drawString(70, 60, P1)
+        # タイムスタンプ（完了日時）のみを印字
         pdf.drawString(70, 40, f"完了日時: {ts}")
         
         pdf.showPage()
