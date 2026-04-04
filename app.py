@@ -4,10 +4,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
-import io
-import requests
-import base64
-import json
+import io, requests, base64, json
 from datetime import datetime
 
 # --- 設定 ---
@@ -24,17 +21,18 @@ def get_address(zipcode):
             if d["results"]:
                 r = d["results"][0]
                 return f"{r['address1']}{r['address2']}{r['address3']}"
-        except:
-            return ""
+        except: return ""
     return ""
 
-# --- 誓約文（一字一句復元） ---
+# --- 誓約文（原本通り・一字一句変えず） ---
 S1 = "私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)の指示を守ります。"
 S2 = "また、受講中に物損事故等が発生した場合、それに伴う損失は全て自己負担とし、"
 S3 = "主催者に責任を追及したり、損害賠償を要求しないことを誓約します。"
+
 W1 = "※原則として参加車両は任意保険への加入をお願いします。"
 W2 = "教習所内の施設を破壊した場合、自己負担で賠償となります。"
 W3 = "(教習車・信号機等は数百万円の賠償となります)"
+
 P1 = "※本フォームで取得した個人情報は、本練習会の運営および緊急時の連絡以外の目的には使用いたしません。"
 
 st.title("GTS二輪車安全運転練習会\n申込フォーム")
@@ -101,11 +99,11 @@ if submit:
         pdf.setFillColor(colors.black)
         pdf.drawString(70, 530, f"令和 {now.year-2018} 年 {now.month} 月 {now.day} 日")
         pdf.drawString(70, 480, f"住所: {u_ad}")
-        pdf.drawString(70, 460, f"氏名: {u_na}  (血液型: {u_bl})")
-        pdf.drawString(70, 440, f"電話: {u_ph}  (緊急連絡先: {u_em})")
+        pdf.drawString(70, 460, f"氏名: {u_na} (血液型: {u_bl})")
+        pdf.drawString(70, 440, f"電話: {u_ph} (緊急連絡先: {u_em})")
         pdf.drawString(70, 380, "【親権者署名】")
         pdf.drawString(70, 360, f"住所: {pa}")
-        pdf.drawString(70, 340, f"氏名: {pn}  (電話: {pp})")
+        pdf.drawString(70, 340, f"氏名: {pn} (電話: {pp})")
         pdf.setFont("HeiseiKakuGo-W5", 8)
         pdf.drawString(70, 60, P1)
         pdf.drawString(70, 40, f"【システム記録】 ID: {e_i} / 日時: {t_s} / 同意済み")
@@ -114,4 +112,7 @@ if submit:
         p_b = buf.getvalue()
         try:
             b64 = base64.b64encode(p_b).decode('utf-8')
-            res = requests.post(GAS_URL, data=json.dumps({"fileName": f"誓約書_{u_na}_{e_i}.pdf", "
+            f_n = f"誓約書_{u_na}_{e_i}.pdf"
+            p_l = {"fileName": f_n, "pdfData": b64}
+            res = requests.post(GAS_URL, data=json.dumps(p_l), headers={'Content-Type': 'application/json'}, timeout=30)
+            if res.status_code == 200: st.success("申込完了！")
