@@ -61,4 +61,55 @@ with c1:
 with c2:
     sm = st.selectbox("月", list(range(1, 13)), index=(n.month - 1))
 with c3:
-    sd = st.selectbox("日", list(range(1
+    sd = st.selectbox("日", list(range(1, 32)), index=(n.day - 1))
+
+ev_date = f"令和{sy - 2018}年 {sm}月 {sd}日"
+
+# 基本情報入力
+st.subheader("【住所・氏名・電話番号・血液型・緊急時の連絡先】")
+z_in = st.text_input("郵便番号（7桁・ハイフンなし）", max_chars=7, placeholder="6900000")
+if st.button("住所を自動入力する"):
+    st.session_state.auto_addr = get_address(z_in)
+
+with st.form("main_form"):
+    u_ad = st.text_input(
+        "住所（番地まで正確に入力してください）", 
+        value=st.session_state.auto_addr, 
+        placeholder="島根県松江市打出町◯番地"
+    )
+    
+    cl, cr = st.columns(2)
+    with cl:
+        u_na = st.text_input("氏名", placeholder="山田 太郎")
+        u_bl = st.selectbox("血液型", ["", "A", "B", "O", "AB"])
+    with cr:
+        u_ph = st.text_input("電話番号", placeholder="090-0000-0000")
+        u_em = st.text_input("緊急連絡先（氏名・続柄など）", placeholder="080-1111-1111（母）")
+
+    st.divider()
+    st.subheader("【未成年の場合のみ入力】")
+    pa = st.text_input("親権者 住所", placeholder="参加者と住所が異なる場合のみ入力")
+    pn = st.text_input("親権者 氏名", placeholder="保護者の氏名を記入")
+    pp = st.text_input("親権者 電話番号", placeholder="090-2222-2222")
+
+    st.divider()
+    st.error("【重要：誓約事項】")
+    st.write(f"{S1}{S2}{S3}{S4}")
+    st.write(f":red[{W1}{W2}]")
+    st.write(f":red[{W3}]")
+    
+    st.info(f"{P1}{P2}")
+    
+    agree = st.checkbox("誓約事項および個人情報の取り扱いに同意し、申し込みます")
+    submit = st.form_submit_button("上記の内容で申し込む（PDF作成・自動保存）")
+
+# --- 4. PDF生成 & Googleドライブ送信処理 ---
+if submit:
+    if not agree:
+        st.error("同意チェックが必要です。")
+    elif not u_na:
+        st.error("氏名は必須です。")
+    else:
+        # タイムスタンプと申込IDの生成
+        now = datetime.now()
+        timestamp_str = now.
