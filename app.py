@@ -68,7 +68,6 @@ with st.form("entry_form"):
     
     st.divider()
     st.subheader("未成年の場合のみ入力")
-    # 親権者の情報を空から入力するように設定
     parent_address = st.text_input("親権者 住所")
     parent_name = st.text_input("親権者 氏名")
     parent_phone = st.text_input("親権者 電話")
@@ -76,7 +75,6 @@ with st.form("entry_form"):
     st.divider()
     st.error("【重要：誓約事項】※必ずご確認ください")
     
-    # 三連引用符でSyntaxErrorを防止
     st.write("""
     私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)の指示を守ります。
     また、受講中に物損事故等が発生した場合、それに伴う損失は全て自己負担とし主催者に責任を追及したり、
@@ -87,13 +85,15 @@ with st.form("entry_form"):
     st.markdown("**:red[教習所内の施設を破壊した場合、自己負担で賠償となります。]**")
     st.markdown("**:red[(教習車・信号機等は数百万円の賠償となります)]**")
     
-    agree = st.checkbox("上記の内容を全て確認し、誓約いたします")
+    st.info("【個人情報の取り扱い】ご入力いただいた個人情報は、本練習会の運営および緊急時の連絡、保険加入手続き以外の目的には使用いたしません。")
+    
+    agree = st.checkbox("誓約事項および個人情報の取り扱いに同意し、申し込みます")
     submitted = st.form_submit_button("申し込む")
 
 # PDF生成処理
 if submitted:
     if not agree:
-        st.error("誓約事項への同意が必要です。")
+        st.error("同意チェックが必要です。")
     elif not name:
         st.error("氏名は必須です。")
     else:
@@ -111,7 +111,7 @@ if submitted:
         p.setFont("HeiseiKakuGo-W5", 14)
         p.drawCentredString(300, 700, "誓   約   書")
         
-        # 誓約文面（黒字）
+        # 誓約文面
         p.setFont("HeiseiKakuGo-W5", 11)
         ty = 670
         p.drawString(70, ty, "私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)")
@@ -119,7 +119,7 @@ if submitted:
         p.drawString(70, ty - 40, "は全て自己負担とし主催者に責任を追及したり、損害賠償を要求しないことを誓約")
         p.drawString(70, ty - 60, "します。")
         
-        # 誓約文面（赤字強調）
+        # 赤字強調
         p.setFillColor(colors.red)
         p.drawString(70, ty - 90, "※原則として参加車両は任意保険への加入をお願いします、教習所内の施設を破壊した")
         p.drawString(70, ty - 110, "場合、自己負担で賠償となります。")
@@ -146,6 +146,10 @@ if submitted:
         p.drawString(90, yp - 30, f"住所: {parent_address}")
         p.drawString(90, yp - 60, f"氏名: {parent_name}")
         p.drawString(90, yp - 90, f"電話: {parent_phone}")
+        
+        # 個人情報保護に関する追記（PDF最下部）
+        p.setFont("HeiseiKakuGo-W5", 9)
+        p.drawString(70, 50, "※本フォームで取得した個人情報は、本練習会の運営および緊急時の連絡以外の目的には使用いたしません。")
         
         p.showPage()
         p.save()
