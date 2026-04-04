@@ -73,4 +73,72 @@ with st.form("main_form"):
     st.divider()
     st.subheader("【未成年の場合のみ入力】")
     pa = st.text_input("親権者 住所", placeholder="参加者と住所が異なる場合のみ入力")
-    pn = st.text_input("親権者 氏名",
+    pn = st.text_input("親権者 氏名", placeholder="保護者の氏名を記入")
+    pp = st.text_input("親権者 電話番号", placeholder="090-2222-2222")
+    
+    st.divider()
+    st.error("【重要：誓約事項】")
+    st.write(S1)
+    st.write(S2)
+    st.write(S3)
+    st.write(f":red[{W1}]")
+    st.write(f":red[{W2}]")
+    st.write(f":red[{W3}]")
+    st.info(P1)
+    
+    agree = st.checkbox("誓約事項および個人情報の取り扱いに同意し、申し込みます")
+    submit = st.form_submit_button("送信（PDF作成・自動保存）")
+
+if submit:
+    if not agree or not u_na:
+        st.error("氏名の入力と同意チェックは必須です。")
+    else:
+        now = datetime.now()
+        ts = now.strftime("%Y-%m-%d %H:%M:%S")
+        eid = now.strftime("%Y%m%d-%H%M%S")
+        
+        buf = io.BytesIO()
+        pdf = canvas.Canvas(buf, pagesize=A4)
+        pdf.setFont("HeiseiKakuGo-W5", 14)
+        pdf.drawString(70, 800, "件名: GTS二輪車安全運転練習会")
+        pdf.drawString(70, 780, f"開催日: {ev_date}")
+        pdf.drawCentredString(300, 720, "誓   約   書")
+        
+        pdf.setFont("HeiseiKakuGo-W5", 11)
+        pdf.drawString(70, 680, S1)
+        pdf.drawString(70, 660, S2)
+        pdf.drawString(70, 640, S3)
+        
+        pdf.setFillColor(colors.red)
+        pdf.drawString(70, 610, W1)
+        pdf.drawString(70, 590, W2)
+        pdf.drawString(70, 570, W3)
+        
+        pdf.setFillColor(colors.black)
+        pdf.drawString(70, 530, f"令和 {now.year-2018} 年 {now.month} 月 {now.day} 日")
+        pdf.drawString(70, 480, f"住所: {u_ad}")
+        pdf.drawString(70, 460, f"氏名: {u_na} (血液型: {u_bl})")
+        pdf.drawString(70, 440, f"電話: {u_ph} (緊急連絡先: {u_em})")
+        
+        pdf.drawString(70, 380, "【親権者署名】")
+        pdf.drawString(70, 360, f"住所: {pa}")
+        pdf.drawString(70, 340, f"氏名: {pn} (電話: {pp})")
+        
+        pdf.setFont("HeiseiKakuGo-W5", 8)
+        pdf.drawString(70, 60, P1)
+        pdf.drawString(70, 40, f"完了日時: {ts}")
+        
+        pdf.showPage()
+        pdf.save()
+        pb = buf.getvalue()
+        
+        try:
+            b64 = base64.b64encode(pb).decode('utf-8')
+            f_n = f"誓約書_{u_na}_{eid}.pdf"
+            p_l = {"fileName": f_n, "pdfData": b64}
+            requests.post(GAS_URL, data=json.dumps(p_l), headers={'Content-Type': 'application/json'}, timeout=30)
+            st.success("申込完了！")
+        except:
+            st.error("保存失敗。手動で保存してください。")
+        
+        st.download_button(label="PDFを保存", data=pb, file_name=f"GTS_{u_na}_{eid}.pdf", mime="application/pdf")
