@@ -59,7 +59,7 @@ with c3:
 ev_date = f"令和{sy - 2018}年 {sm}月 {sd}日"
 
 # 住所検索
-st.subheader("【住所】")
+st.subheader("【住所・氏名・電話番号・血液型・緊急時の連絡先】")
 z_in = st.text_input("郵便番号（7桁・ハイフンなし）", max_chars=7, placeholder="6900000")
 if st.button("住所を自動入力する"):
     st.session_state.auto_addr = get_address(z_in)
