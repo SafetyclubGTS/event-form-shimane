@@ -68,6 +68,7 @@ with st.form("entry_form"):
     
     st.divider()
     st.subheader("未成年の場合のみ入力")
+    # 親権者の情報を空から入力するように設定
     parent_address = st.text_input("親権者 住所")
     parent_name = st.text_input("親権者 氏名")
     parent_phone = st.text_input("親権者 電話")
@@ -75,14 +76,13 @@ with st.form("entry_form"):
     st.divider()
     st.error("【重要：誓約事項】※必ずご確認ください")
     
-    # 画面表示用の誓約文
+    # 三連引用符でSyntaxErrorを防止
     st.write("""
     私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)の指示を守ります。
     また、受講中に物損事故等が発生した場合、それに伴う損失は全て自己負担とし主催者に責任を追及したり、
     損害賠償を要求しないことを誓約します。
     """)
     
-    # 赤字強調部分
     st.markdown("**:red[※原則として参加車両は任意保険への加入をお願いします、]**")
     st.markdown("**:red[教習所内の施設を破壊した場合、自己負担で賠償となります。]**")
     st.markdown("**:red[(教習車・信号機等は数百万円の賠償となります)]**")
@@ -111,46 +111,46 @@ if submitted:
         p.setFont("HeiseiKakuGo-W5", 14)
         p.drawCentredString(300, 700, "誓   約   書")
         
-        # PDF内の誓約文面（黒字）
+        # 誓約文面（黒字）
         p.setFont("HeiseiKakuGo-W5", 11)
-        text_y = 670
-        p.drawString(70, text_y, "私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)")
-        p.drawString(70, text_y - 20, "の指示を守ります。また、受講中に物損事故等が発生した場合、それに伴う損失")
-        p.drawString(70, text_y - 40, "は全て自己負担とし主催者に責任を追及したり、損害賠償を要求しないことを誓約")
-        p.drawString(70, text_y - 60, "します。")
+        ty = 670
+        p.drawString(70, ty, "私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)")
+        p.drawString(70, ty - 20, "の指示を守ります。また、受講中に物損事故等が発生した場合、それに伴う損失")
+        p.drawString(70, ty - 40, "は全て自己負担とし主催者に責任を追及したり、損害賠償を要求しないことを誓約")
+        p.drawString(70, ty - 60, "します。")
         
-        # PDF内の赤字強調（改行を考慮して1行ずつ記述）
+        # 誓約文面（赤字強調）
         p.setFillColor(colors.red)
-        p.drawString(70, text_y - 90, "※原則として参加車両は任意保険への加入をお願いします、教習所内の施設を破壊した")
-        p.drawString(70, text_y - 110, "場合、自己負担で賠償となります。")
-        p.drawString(70, text_y - 130, "(教習車・信号機等は数百万円の賠償となります)")
+        p.drawString(70, ty - 90, "※原則として参加車両は任意保険への加入をお願いします、教習所内の施設を破壊した")
+        p.drawString(70, ty - 110, "場合、自己負担で賠償となります。")
+        p.drawString(70, ty - 130, "(教習車・信号機等は数百万円の賠償となります)")
         
         p.setFillColor(colors.black)
         
         today = datetime.now()
-        p.drawString(70, text_y - 160, f"令和  {today.year-2018} 年  {today.month} 月  {today.day} 日")
+        p.drawString(70, ty - 160, f"令和  {today.year-2018} 年  {today.month} 月  {today.day} 日")
         
         # 署名欄
         p.setFont("HeiseiKakuGo-W5", 12)
-        y_info = text_y - 210
-        p.drawString(70, y_info, "参加者署名")
-        p.drawString(90, y_info - 30, f"住所: {address}")
-        p.drawString(90, y_info - 60, f"氏名: {name}")
-        p.drawString(350, y_info - 60, f"血液型: {blood_type}")
-        p.drawString(90, y_info - 90, f"電話: {phone}")
-        p.drawString(90, y_info - 120, f"緊急連絡先: {emergency_contact}")
+        yi = ty - 210
+        p.drawString(70, yi, "参加者署名")
+        p.drawString(90, yi - 30, f"住所: {address}")
+        p.drawString(90, yi - 60, f"氏名: {name}")
+        p.drawString(350, yi - 60, f"血液型: {blood_type}")
+        p.drawString(90, yi - 90, f"電話: {phone}")
+        p.drawString(90, yi - 120, f"緊急連絡先: {emergency_contact}")
         
         # 親権者欄
-        y_parent = y_info - 170
-        p.drawString(70, y_parent, "親権者署名(未成年参加者は必須)")
-        p.drawString(90, y_parent - 30, f"住所: {parent_address}")
-        p.drawString(90, y_parent - 60, f"氏名: {parent_name}")
-        p.drawString(90, y_parent - 90, f"電話: {parent_phone}")
+        yp = yi - 170
+        p.drawString(70, yp, "親権者署名(未成年参加者は必須)")
+        p.drawString(90, yp - 30, f"住所: {parent_address}")
+        p.drawString(90, yp - 60, f"氏名: {parent_name}")
+        p.drawString(90, yp - 90, f"電話: {parent_phone}")
         
         p.showPage()
         p.save()
         
-        st.success("申込手続きが完了しました。以下のボタンから誓約書を保存してください。")
+        st.success("申込手続きが完了しました。以下のボタンから保存してください。")
         st.download_button(
             label="誓約書PDFを保存する", 
             data=buffer.getvalue(), 
