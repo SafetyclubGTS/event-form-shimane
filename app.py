@@ -64,4 +64,34 @@ with st.form("main_form"):
     u_ad = st.text_input("住所", value=st.session_state.auto_addr, placeholder="島根県松江市打出町◯番地")
     cl, cr = st.columns(2)
     with cl:
-        u_na = st.text_input
+        u_na = st.text_input("氏名", placeholder="山田 太郎")
+        u_bl = st.selectbox("血液型", ["", "A", "B", "O", "AB"])
+    with cr:
+        u_ph = st.text_input("電話番号", placeholder="090-0000-0000")
+        u_em = st.text_input("緊急連絡先", placeholder="080-1111-1111（母）")
+    
+    st.divider()
+    st.subheader("【未成年の場合のみ入力】")
+    pa = st.text_input("親権者 住所", placeholder="参加者と住所が異なる場合のみ入力")
+    pn = st.text_input("親権者 氏名", placeholder="保護者の氏名を記入")
+    pp = st.text_input("親権者 電話番号", placeholder="090-2222-2222")
+    
+    st.divider()
+    st.error("【重要：誓約事項】")
+    st.write(S1)
+    st.write(S2)
+    st.write(S3)
+    st.write(f":red[{W1}]")
+    st.write(f":red[{W2}]")
+    st.write(f":red[{W3}]")
+    st.info(P1)
+    
+    agree = st.checkbox("誓約事項および個人情報の取り扱いに同意し、申し込みます")
+    
+    # 修正箇所: フォーム内のインデントに合わせて送信ボタンを配置
+    submit = st.form_submit_button("送信（PDF作成・自動保存）")
+
+if submit:
+    if not agree or not u_na:
+        st.error("氏名の入力と同意チェックは必須です。")
+    else:
