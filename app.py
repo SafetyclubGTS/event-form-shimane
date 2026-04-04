@@ -84,42 +84,4 @@ with st.form("entry_form"):
     
     st.markdown("**:red[※原則として参加車両は任意保険への加入をお願いします、]**")
     st.markdown("**:red[教習所内の施設を破壊した場合、自己負担で賠償となります。]**")
-    st.markdown("**:red[(教習車・信号機等は数百万円の賠償となります)]**")
-    
-    st.info("【個人情報の取り扱い】ご入力いただいた個人情報は、本練習会の運営および緊急時の連絡、保険加入手続き以外の目的には使用いたしません。")
-    
-    agree = st.checkbox("誓約事項および個人情報の取り扱いに同意し、申し込みます")
-    submitted = st.form_submit_button("申し込む")
-
-# PDF生成処理
-if submitted:
-    if not agree:
-        st.error("同意チェックが必要です。")
-    elif not name:
-        st.error("氏名は必須です。")
-    else:
-        buffer = io.BytesIO()
-        p = canvas.Canvas(buffer, pagesize=A4)
-        
-        # ヘッダー
-        p.setFont("HeiseiKakuGo-W5", 16)
-        p.drawString(70, 800, "件名:二輪車安全運転練習会")
-        p.setFont("HeiseiKakuGo-W5", 12)
-        p.drawString(70, 780, "主催者: GTS (グランドツアー山陰)")
-        p.drawString(70, 760, f"開催日:{event_date_str}")
-        p.drawString(70, 740, "会場名:島根県運転免許センター")
-        
-        p.setFont("HeiseiKakuGo-W5", 14)
-        p.drawCentredString(300, 700, "誓   約   書")
-        
-        p.setFont("HeiseiKakuGo-W5", 11)
-        ty = 670
-        p.drawString(70, ty, "私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)")
-        p.drawString(70, ty - 20, "の指示を守ります。また、受講中に物損事故等が発生した場合、それに伴う損失")
-        p.drawString(70, ty - 40, "は全て自己負担とし主催者に責任を追及したり、損害賠償を要求しないことを誓約")
-        p.drawString(70, ty - 60, "します。")
-        
-        p.setFillColor(colors.red)
-        p.drawString(70, ty - 90, "※原則として参加車両は任意保険への加入をお願いします、教習所内の施設を破壊した")
-        p.drawString(70, ty - 110, "場合、自己負担で賠償となります。")
-        p.drawString(70, ty - 130
+    st.markdown("
