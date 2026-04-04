@@ -16,6 +16,7 @@ st.set_page_config(page_title="GTS参加申込", page_icon="🏍️")
 pdfmetrics.registerFont(UnicodeCIDFont('HeiseiKakuGo-W5'))
 
 def get_address(zipcode):
+    """郵便番号から住所を自動取得"""
     if len(zipcode) == 7:
         try:
             url = f"https://zipcloud.ibsnet.co.jp/api/search?zipcode={zipcode}"
@@ -29,7 +30,7 @@ def get_address(zipcode):
     return ""
 
 # --- 誓約文（原本通り・一字一句復元） ---
-S1 = "私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)の指示を守ります。"
+S1 = "私は、この練習会に参加するに当たり,主催者(インストラクターおよび指導者等)の指示を守ります。"
 S2 = "また、受講中に物損事故等が発生した場合、それに伴う損失は全て自己負担とし、"
 S3 = "主催者に責任を追及したり、損害賠償を要求しないことを誓約します。"
 
@@ -63,72 +64,4 @@ with st.form("main_form"):
     u_ad = st.text_input("住所", value=st.session_state.auto_addr, placeholder="島根県松江市打出町◯番地")
     cl, cr = st.columns(2)
     with cl:
-        u_na = st.text_input("氏名", placeholder="山田 太郎")
-        u_bl = st.selectbox("血液型", ["", "A", "B", "O", "AB"])
-    with cr:
-        u_ph = st.text_input("電話番号", placeholder="090-0000-0000")
-        u_em = st.text_input("緊急連絡先", placeholder="080-1111-1111（母）")
-    
-    st.divider()
-    st.subheader("【未成年の場合のみ入力】")
-    pa = st.text_input("親権者 住所", placeholder="参加者と住所が異なる場合のみ入力")
-    pn = st.text_input("親権者 氏名", placeholder="保護者の氏名を記入")
-    pp = st.text_input("親権者 電話番号", placeholder="090-2222-2222")
-    
-    st.divider()
-    st.error("【重要：誓約事項】")
-    st.write(S1)
-    st.write(S2)
-    st.write(S3)
-    st.write(f":red[{W1}]")
-    st.write(f":red[{W2}]")
-    st.write(f":red[{W3}]")
-    st.info(P1)
-    
-    agree = st.checkbox("誓約事項および個人情報の取り扱いに同意し、申し込みます")
-    submit = st.form_submit_button("送信（PDF作成・自動保存）")
-
-if submit:
-    if not agree or not u_na:
-        st.error("氏名の入力と同意チェックは必須です。")
-    else:
-        now = datetime.now()
-        ts = now.strftime("%Y-%m-%d %H:%M:%S")
-        eid = now.strftime("%Y%m%d-%H%M%S")
-        
-        buf = io.BytesIO()
-        pdf = canvas.Canvas(buf, pagesize=A4)
-        pdf.setFont("HeiseiKakuGo-W5", 14)
-        pdf.drawString(70, 800, "件名: GTS二輪車安全運転練習会")
-        pdf.drawString(70, 780, f"開催日: {ev_date}")
-        pdf.drawCentredString(300, 720, "誓   約   書")
-        
-        pdf.setFont("HeiseiKakuGo-W5", 11)
-        pdf.drawString(70, 680, S1)
-        pdf.drawString(70, 660, S2)
-        pdf.drawString(70, 640, S3)
-        
-        pdf.setFillColor(colors.red)
-        pdf.drawString(70, 610, W1)
-        pdf.drawString(70, 590, W2)
-        pdf.drawString(70, 570, W3)
-        
-        pdf.setFillColor(colors.black)
-        pdf.drawString(70, 530, f"令和 {now.year-2018} 年 {now.month} 月 {now.day} 日")
-        pdf.drawString(70, 480, f"住所: {u_ad}")
-        pdf.drawString(70, 460, f"氏名: {u_na} (血液型: {u_bl})")
-        pdf.drawString(70, 440, f"電話: {u_ph} (緊急連絡先: {u_em})")
-        
-        pdf.drawString(70, 380, "【親権者署名】")
-        pdf.drawString(70, 360, f"住所: {pa}")
-        pdf.drawString(70, 340, f"氏名: {pn} (電話: {pp})")
-        
-        pdf.setFont("HeiseiKakuGo-W5", 8)
-        pdf.drawString(70, 60, P1)
-        pdf.drawString(70, 40, f"完了日時: {ts}")
-        
-        pdf.showPage()
-        pdf.save()
-        pb = buf.getvalue()
-        
-        try:
+        u_na = st.text_input
