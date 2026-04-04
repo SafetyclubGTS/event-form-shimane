@@ -24,8 +24,8 @@ def get_address(zipcode):
             return ""
     return ""
 
-# タイトル
-st.title("二輪車安全運転練習会\n申込フォーム")
+# タイトル（GTSを追加）
+st.title("GTS二輪車安全運転練習会\n申込フォーム")
 
 if "auto_addr" not in st.session_state:
     st.session_state.auto_addr = ""
@@ -50,7 +50,7 @@ if st.button("住所を自動入力する"):
     if not st.session_state.auto_addr:
         st.error("住所が見つかりませんでした。")
 
-# --- 3. メインフォーム ---
+# --- 3. メインフォーム（送信ボタンを内包） ---
 with st.form("main_form"):
     addr = st.text_input(
         "住所（番地まで入力）", 
@@ -76,22 +76,41 @@ with st.form("main_form"):
     st.divider()
     st.error("【重要：誓約事項】")
     
-    # 安全な三連引用符
     st.write("""
     私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)の指示を守ります。
     また、受講中に物損事故等が発生した場合、それに伴う損失は全て自己負担とし主催者に責任を追及したり、
     損害賠償を要求しないことを誓約します。
     """)
     
-    # 警告文（変数に入れてから表示することでエラーを回避）
-    warn_1 = "※原則として参加車両は任意保険への加入をお願いします"
-    warn_2 = "※教習所内の施設を破壊した場合、自己負担で賠償となります"
-    warn_3 = "※(教習車・信号機等は数百万円の賠償となります)"
+    w1 = "※原則として参加車両は任意保険への加入をお願いします"
+    w2 = "※教習所内の施設を破壊した場合、自己負担で賠償となります"
+    w3 = "※(教習車・信号機等は数百万円の賠償となります)"
     
-    st.write(f":red[{warn_1}]")
-    st.write(f":red[{warn_2}]")
-    st.write(f":red[{warn_3}]")
+    st.write(f":red[{w1}]")
+    st.write(f":red[{w2}]")
+    st.write(f":red[{w3}]")
     
     st.info("【個人情報の取り扱い】ご入力いただいた情報は、運営および緊急連絡以外の目的には使用しません。")
     
-    is_agree = st.checkbox
+    is_agree = st.checkbox("誓約事項および個人情報の取り扱いに同意し、申し込みます")
+    
+    # 送信ボタン（必ずこの with ブロックの中に配置）
+    is_submit = st.form_submit_button("申し込む")
+
+# --- 4. PDF生成処理 ---
+if is_submit:
+    if not is_agree:
+        st.error("同意チェックが必要です。")
+    elif not u_name:
+        st.error("氏名は必須です。")
+    else:
+        buf = io.BytesIO()
+        pdf = canvas.Canvas(buf, pagesize=A4)
+        
+        pdf.setFont("HeiseiKakuGo-W5", 16)
+        # PDF内のタイトルも GTS に合わせて修正
+        pdf.drawString(70, 800, "件名: GTS二輪車安全運転練習会")
+        pdf.setFont("HeiseiKakuGo-W5", 12)
+        pdf.drawString(70, 780, "主催者: GTS (グランドツアー山陰)")
+        pdf.drawString(70, 760, f"開催日: {event_date}")
+        pdf.drawString(70, 740,
