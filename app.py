@@ -33,14 +33,13 @@ def get_address(zipcode):
             return ""
     return ""
 
-# --- 2. 誓約書の文言（原本再現） ---
-S1 = "私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)"
-S2 = "の指示を守ります。また、受講中に物損事故等が発生した場合、それに伴う損失"
-S3 = "は全て自己負担とし主催者に責任を追及したり、損害賠償を要求しないことを誓約"
-S4 = "します。"
+# --- 2. 誓約書の文言（原本の完全復元） ---
+S1 = "私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)の指示を守ります。"
+S2 = "また、受講中に物損事故等が発生した場合、それに伴う損失は全て自己負担とし、"
+S3 = "主催者に責任を追及したり、損害賠償を要求しないことを誓約します。"
 
-W1 = "※原則として参加車両は任意保険への加入をお願いします、教習所内の施設を破壊した"
-W2 = "場合、自己負担で賠償となります。"
+W1 = "※原則として参加車両は任意保険への加入をお願いします。"
+W2 = "教習所内の施設を破壊した場合、自己負担で賠償となります。"
 W3 = "(教習車・信号機等は数百万円の賠償となります)"
 
 P1 = "※本フォームで取得した個人情報は、本練習会の運営および緊急時の連絡以外の"
@@ -94,4 +93,71 @@ with st.form("main_form"):
 
     st.divider()
     st.error("【重要：誓約事項】")
-    st.write(f"{S1}{S2}{S3}{S4}")
+    st.write(S1)
+    st.write(S2)
+    st.write(S3)
+    st.write(f":red[{W1}]")
+    st.write(f":red[{W2}]")
+    st.write(f":red[{W3}]")
+    
+    st.info(f"{P1}{P2}")
+    
+    agree = st.checkbox("誓約事項および個人情報の取り扱いに同意し、申し込みます")
+    submit = st.form_submit_button("上記の内容で申し込む（PDF作成・自動保存）")
+
+# --- 4. PDF生成 & Googleドライブ送信処理 ---
+if submit:
+    if not agree:
+        st.error("同意チェックが必要です。")
+    elif not u_na:
+        st.error("氏名は必須です。")
+    else:
+        # タイムスタンプと申込IDの生成
+        now = datetime.now()
+        t_str = now.strftime("%Y-%m-%d %H:%M:%S")
+        e_id = now.strftime("%Y%m%d-%H%M%S")
+
+        buf = io.BytesIO()
+        pdf = canvas.Canvas(buf, pagesize=A4)
+        
+        # ヘッダー描画
+        pdf.setFont("HeiseiKakuGo-W5", 16)
+        pdf.drawString(70, 800, "件名: GTS二輪車安全運転練習会")
+        pdf.setFont("HeiseiKakuGo-W5", 12)
+        pdf.drawString(70, 780, "主催者: GTS (グランドツアー山陰)")
+        pdf.drawString(70, 760, f"開催日: {ev_date}")
+        pdf.drawString(70, 740, "会場名: 島根県運転免許センター")
+        
+        pdf.setFont("HeiseiKakuGo-W5", 14)
+        pdf.drawCentredString(300, 700, "誓   約   書")
+        
+        # 誓約文の描画
+        pdf.setFont("HeiseiKakuGo-W5", 11)
+        pdf.drawString(70, 670, S1)
+        pdf.drawString(70, 650, S2)
+        pdf.drawString(70, 630, S3)
+        
+        # 注意書き（赤字）
+        pdf.setFillColor(colors.red)
+        pdf.drawString(70, 590, W1)
+        pdf.drawString(70, 570, W2)
+        pdf.drawString(70, 550, W3)
+        
+        # 署名欄と日付
+        pdf.setFillColor(colors.black)
+        y_r = now.year - 2018
+        pdf.drawString(70, 500, f"令和 {y_r} 年 {now.month} 月 {now.day} 日")
+        
+        pdf.setFont("HeiseiKakuGo-W5", 12)
+        pdf.drawString(70, 460, "参加者署名")
+        pdf.drawString(90, 430, f"住所: {u_ad}")
+        pdf.drawString(90, 400, f"氏名: {u_na}")
+        pdf.drawString(350, 400, f"血液型: {u_bl}")
+        pdf.drawString(90, 370, f"電話: {u_ph}")
+        pdf.drawString(90, 340, f"緊急連絡先: {u_em}")
+        
+        # 親権者欄
+        pdf.drawString(70, 290, "親権者署名(未成年参加者は必須)")
+        pdf.drawString(90, 260, f"住所: {pa}")
+        pdf.drawString(90, 230, f"氏名: {pn}")
+        pdf.drawString(90,
