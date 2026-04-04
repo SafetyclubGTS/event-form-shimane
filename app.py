@@ -65,4 +65,13 @@ with st.form("main_form"):
     cl, cr = st.columns(2)
     with cl:
         u_na = st.text_input("氏名", placeholder="山田 太郎")
-        u_bl = st.selectbox("血液型", ["", "A", "
+        u_bl = st.selectbox("血液型", ["", "A", "B", "O", "AB"])
+    with cr:
+        u_ph = st.text_input("電話番号", placeholder="090-0000-0000")
+        u_em = st.text_input("緊急連絡先", placeholder="080-1111-1111（母）")
+    
+    st.divider()
+    st.subheader("【未成年の場合のみ入力】")
+    pa = st.text_input("親権者 住所", placeholder="参加者と住所が異なる場合のみ入力")
+    pn = st.text_input("親権者 氏名", placeholder="保護者の氏名を記入")
+    pp = st.text_input("親権者 電話番号", placeholder="090-2222-2222
