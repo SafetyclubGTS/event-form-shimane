@@ -42,17 +42,16 @@ with c_d:
 
 event_date = f"令和{sel_y - 2018}年 {sel_m}月 {sel_d}日"
 
-# --- 2. 住所検索 ---
-st.subheader("【住所検索】")
-zip_in = st.text_input("郵便番号（7桁）", max_chars=7, placeholder="6900000")
-if st.button("住所を検索する"):
+# --- 2. 住所（見出しをシンプルに変更） ---
+st.subheader("【住所】")
+zip_in = st.text_input("郵便番号（7桁・ハイフンなし）", max_chars=7, placeholder="6900000")
+if st.button("住所を自動入力する"):
     st.session_state.auto_addr = get_address(zip_in)
     if not st.session_state.auto_addr:
         st.error("住所が見つかりませんでした。")
 
-# --- 3. メインフォーム（記入例を追加） ---
+# --- 3. メインフォーム ---
 with st.form("main_form"):
-    # placeholder= で薄い文字の記入例を表示
     addr = st.text_input(
         "住所（番地まで入力）", 
         value=st.session_state.auto_addr, 
@@ -83,9 +82,11 @@ with st.form("main_form"):
     損害賠償を要求しないことを誓約します。
     """)
     
-    st.markdown("**:red[※原則として参加車両は任意保険への加入をお願いします]**")
-    st.markdown("**:red[※教習所内の施設を破壊した場合、自己負担で賠償となります]**")
-    st.markdown("**:red[(教習車・信号機等は数百万円の賠償となります)]**")
+    st.markdown("""
+    **:red[※原則として参加車両は任意保険への加入をお願いします]**
+    **:red[※教習所内の施設を破壊した場合、自己負担で賠償となります]**
+    **:red[(教習車・信号機等は数百万円の賠償となります)]**
+    """)
     
     st.info("【個人情報の取り扱い】ご入力いただいた情報は、運営および緊急連絡以外の目的には使用しません。")
     
@@ -102,7 +103,6 @@ if is_submit:
         buf = io.BytesIO()
         pdf = canvas.Canvas(buf, pagesize=A4)
         
-        # ヘッダー
         pdf.setFont("HeiseiKakuGo-W5", 16)
         pdf.drawString(70, 800, "件名:二輪車安全運転練習会")
         pdf.setFont("HeiseiKakuGo-W5", 12)
@@ -133,35 +133,4 @@ if is_submit:
         pdf.setFillColor(colors.black)
         today = datetime.now()
         dt_txt = f"令和  {today.year-2018} 年  {today.month} 月  {today.day} 日"
-        pdf.drawString(70, cy - 160, dt_txt)
-        
-        # 署名欄
-        pdf.setFont("HeiseiKakuGo-W5", 12)
-        iy = cy - 210
-        pdf.drawString(70, iy, "参加者署名")
-        pdf.drawString(90, iy - 30, f"住所: {addr}")
-        pdf.drawString(90, iy - 60, f"氏名: {u_name}")
-        pdf.drawString(350, iy - 60, f"血液型: {u_blood}")
-        pdf.drawString(90, iy - 90, f"電話: {u_phone}")
-        pdf.drawString(90, iy - 120, f"緊急連絡先: {u_emergency}")
-        
-        py = iy - 170
-        pdf.drawString(70, py, "親権者署名(未成年参加者は必須)")
-        pdf.drawString(90, py - 30, f"住所: {p_addr}")
-        pdf.drawString(90, py - 60, f"氏名: {p_name}")
-        pdf.drawString(90, py - 90, f"電話: {p_phone}")
-        
-        pdf.setFont("HeiseiKakuGo-W5", 9)
-        pol = "※本フォームで取得した個人情報は、本練習会の運営および緊急時の連絡以外の目的には使用いたしません。"
-        pdf.drawString(70, 50, pol)
-        
-        pdf.showPage()
-        pdf.save()
-        
-        st.success("申込手続きが完了しました。")
-        st.download_button(
-            label="誓約書PDFを保存する", 
-            data=buf.getvalue(), 
-            file_name=f"GTS誓約書_{u_name}.pdf", 
-            mime="application/pdf"
-        )
+        pdf.drawString(70, cy
