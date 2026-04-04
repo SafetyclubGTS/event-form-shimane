@@ -95,21 +95,3 @@ with st.form("main_form"):
     st.divider()
     st.error("【重要：誓約事項】")
     st.write(f"{S1}{S2}{S3}{S4}")
-    st.write(f":red[{W1}{W2}]")
-    st.write(f":red[{W3}]")
-    
-    st.info(f"{P1}{P2}")
-    
-    agree = st.checkbox("誓約事項および個人情報の取り扱いに同意し、申し込みます")
-    submit = st.form_submit_button("上記の内容で申し込む（PDF作成・自動保存）")
-
-# --- 4. PDF生成 & Googleドライブ送信処理 ---
-if submit:
-    if not agree:
-        st.error("同意チェックが必要です。")
-    elif not u_na:
-        st.error("氏名は必須です。")
-    else:
-        # タイムスタンプと申込IDの生成
-        now = datetime.now()
-        timestamp_str = now.
