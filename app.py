@@ -8,124 +8,163 @@ import io
 import requests
 from datetime import datetime
 
-# ページ設定
+# --- 設定 ---
 st.set_page_config(page_title="GTS参加申込", page_icon="🏍️")
-
-# 日本語フォント（平成角ゴシック）の登録
 pdfmetrics.registerFont(UnicodeCIDFont('HeiseiKakuGo-W5'))
 
-# 郵便番号から住所を取得する関数
 def get_address(zipcode):
     if len(zipcode) == 7:
         try:
             res = requests.get(f"https://zipcloud.ibsnet.co.jp/api/search?zipcode={zipcode}")
             data = res.json()
             if data["results"]:
-                result = data["results"][0]
-                return f"{result['address1']}{result['address2']}{result['address3']}"
+                r = data["results"][0]
+                return f"{r['address1']}{r['address2']}{r['address3']}"
         except:
             return ""
     return ""
 
-# タイトル（会と申の間で改行）
-st.title("""二輪車安全運転練習会
-申込フォーム""")
+# タイトル（改行コードを使用）
+st.title("二輪車安全運転練習会\n申込フォーム")
 
-# セッション状態（入力保持）の初期化
 if "auto_addr" not in st.session_state:
     st.session_state.auto_addr = ""
 
-# 1. 開催日の選択
+# --- 1. 日付選択 ---
 st.subheader("【開催日】")
-col_y, col_m, col_d = st.columns(3)
-with col_y:
-    selected_year = st.selectbox("年", list(range(2026, 2051)), index=0)
-with col_m:
-    selected_month = st.selectbox("月", list(range(1, 13)), index=datetime.now().month - 1)
-with col_d:
-    selected_day = st.selectbox("日", list(range(1, 32)), index=datetime.now().day - 1)
+c_y, c_m, c_d = st.columns(3)
+with c_y:
+    sel_y = st.selectbox("年", list(range(2026, 2051)), index=0)
+with c_m:
+    sel_m = st.selectbox("月", list(range(1, 13)), index=datetime.now().month - 1)
+with c_d:
+    sel_d = st.selectbox("日", list(range(1, 32)), index=datetime.now().day - 1)
 
-event_date_str = f"令和{selected_year - 2018}年 {selected_month}月 {selected_day}日"
+event_date = f"令和{sel_y - 2018}年 {sel_m}月 {sel_d}日"
 
-# 2. 住所検索
+# --- 2. 住所検索 ---
 st.subheader("【住所検索】")
-zip_input = st.text_input("郵便番号（7桁・ハイフンなし）を入力してEnter", max_chars=7)
+zip_in = st.text_input("郵便番号（7桁・ハイフンなし）", max_chars=7)
 if st.button("住所を検索する"):
-    st.session_state.auto_addr = get_address(zip_input)
+    st.session_state.auto_addr = get_address(zip_in)
     if not st.session_state.auto_addr:
         st.error("住所が見つかりませんでした。")
 
-# 3. メインフォーム
-with st.form("entry_form"):
-    address = st.text_input("住所（番地まで入力してください）", value=st.session_state.auto_addr)
+# --- 3. フォーム ---
+with st.form("main_form"):
+    addr = st.text_input("住所（番地まで）", value=st.session_state.auto_addr)
     
-    col1, col2 = st.columns(2)
-    with col1:
-        name = st.text_input("氏名")
-        blood_type = st.selectbox("血液型", ["", "A", "B", "O", "AB"])
-    with col2:
-        phone = st.text_input("電話番号")
+    col_left, col_right = st.columns(2)
+    with col_left:
+        u_name = st.text_input("氏名")
+        u_blood = st.selectbox("血液型", ["", "A", "B", "O", "AB"])
+    with col_right:
+        u_phone = st.text_input("電話番号")
         
-    emergency_contact = st.text_input("緊急連絡先")
+    u_emergency = st.text_input("緊急連絡先")
     
     st.divider()
     st.subheader("未成年の場合のみ入力")
-    parent_address = st.text_input("親権者 住所")
-    parent_name = st.text_input("親権者 氏名")
-    parent_phone = st.text_input("親権者 電話")
+    p_addr = st.text_input("親権者 住所")
+    p_name = st.text_input("親権者 氏名")
+    p_phone = st.text_input("親権者 電話")
 
     st.divider()
-    st.error("【重要：誓約事項】※必ずご確認ください")
+    st.error("【重要：誓約事項】")
     
-    # 三連引用符による安全な記述
+    # 三連引用符で安全に記述
     st.write("""
     私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)の指示を守ります。
     また、受講中に物損事故等が発生した場合、それに伴う損失は全て自己負担とし主催者に責任を追及したり、
     損害賠償を要求しないことを誓約します。
     """)
     
-    st.markdown("""
-    **:red[※原則として参加車両は任意保険への加入をお願いします、]**
-    **:red[教習所内の施設を破壊した場合、自己負担で賠償となります。]**
-    **:red[(教習車・信号機等は数百万円の賠償となります)]**
-    """)
+    st.markdown("**:red[※原則として参加車両は任意保険への加入をお願いします]**")
+    st.markdown("**:red[※教習所内の施設を破壊した場合、自己負担で賠償となります]**")
+    st.markdown("**:red[(教習車・信号機等は数百万円の賠償となります)]**")
     
-    st.info("""【個人情報の取り扱い】ご入力いただいた個人情報は、本練習会の運営および緊急時の連絡、保険加入手続き以外の目的には使用いたしません。""")
+    st.info("【個人情報の取り扱い】ご入力いただいた情報は、運営および緊急連絡以外の目的には使用しません。")
     
-    agree = st.checkbox("誓約事項および個人情報の取り扱いに同意し、申し込みます")
-    submitted = st.form_submit_button("申し込む")
+    is_agree = st.checkbox("誓約事項および個人情報の取り扱いに同意し、申し込みます")
+    is_submit = st.form_submit_button("申し込む")
 
-# PDF生成処理
-if submitted:
-    if not agree:
+# --- 4. PDF生成 ---
+if is_submit:
+    if not is_agree:
         st.error("同意チェックが必要です。")
-    elif not name:
+    elif not u_name:
         st.error("氏名は必須です。")
     else:
-        buffer = io.BytesIO()
-        p = canvas.Canvas(buffer, pagesize=A4)
+        buf = io.BytesIO()
+        pdf = canvas.Canvas(buf, pagesize=A4)
         
-        # ヘッダー部分
-        p.setFont("HeiseiKakuGo-W5", 16)
-        p.drawString(70, 800, "件名:二輪車安全運転練習会")
-        p.setFont("HeiseiKakuGo-W5", 12)
-        p.drawString(70, 780, "主催者: GTS (グランドツアー山陰)")
-        p.drawString(70, 760, f"開催日:{event_date_str}")
-        p.drawString(70, 740, "会場名:島根県運転免許センター")
+        # 固定ヘッダー
+        pdf.setFont("HeiseiKakuGo-W5", 16)
+        pdf.drawString(70, 800, "件名:二輪車安全運転練習会")
+        pdf.setFont("HeiseiKakuGo-W5", 12)
+        pdf.drawString(70, 780, "主催者: GTS (グランドツアー山陰)")
+        pdf.drawString(70, 760, f"開催日: {event_date}")
+        pdf.drawString(70, 740, "会場名: 島根県運転免許センター")
         
-        p.setFont("HeiseiKakuGo-W5", 14)
-        p.drawCentredString(300, 700, "誓   約   書")
+        pdf.setFont("HeiseiKakuGo-W5", 14)
+        pdf.drawCentredString(300, 700, "誓   約   書")
         
-        # 誓約文（前半）
-        p.setFont("HeiseiKakuGo-W5", 11)
-        ty = 670
-        p.drawString(70, ty, "私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)")
-        p.drawString(70, ty - 20, "の指示を守ります。また、受講中に物損事故等が発生した場合、それに伴う損失")
-        p.drawString(70, ty - 40, "は全て自己負担とし主催者に責任を追及したり、損害賠償を要求しないことを誓約")
-        p.drawString(70, ty - 60, "します。")
+        # 誓約文面（黒字）
+        pdf.setFont("HeiseiKakuGo-W5", 11)
+        curr_y = 670
+        line1 = "私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)"
+        line2 = "の指示を守ります。また、受講中に物損事故等が発生した場合、それに伴う損失"
+        line3 = "は全て自己負担とし主催者に責任を追及したり、損害賠償を要求しないことを誓約"
+        line4 = "します。"
         
-        # 赤字強調部分（カッコの閉じ忘れを徹底点検済み）
-        p.setFillColor(colors.red)
-        p.drawString(70, ty - 90, "※原則として参加車両は任意保険への加入をお願いします、教習所内の施設を破壊した")
-        p.drawString(70, ty - 110, "場合、自己負担で賠償となります。")
-        p.drawString(70, ty - 130, "(教習車・信号機等は数百万円
+        pdf.drawString(70, curr_y, line1)
+        pdf.drawString(70, curr_y - 20, line2)
+        pdf.drawString(70, curr_y - 40, line3)
+        pdf.drawString(70, curr_y - 60, line4)
+        
+        # 賠償注意（赤字）- 1行を短くして変数化
+        pdf.setFillColor(colors.red)
+        warn1 = "※原則として参加車両は任意保険への加入をお願いします、教習所内の施設を破壊した"
+        warn2 = "場合、自己負担で賠償となります。"
+        warn3 = "(教習車・信号機等は数百万円の賠償となります)"
+        
+        pdf.drawString(70, curr_y - 90, warn1)
+        pdf.drawString(70, curr_y - 110, warn2)
+        pdf.drawString(70, curr_y - 130, warn3)
+        
+        # 日付と署名欄（黒字に戻す）
+        pdf.setFillColor(colors.black)
+        today = datetime.now()
+        today_str = f"令和  {today.year-2018} 年  {today.month} 月  {today.day} 日"
+        pdf.drawString(70, curr_y - 160, today_str)
+        
+        pdf.setFont("HeiseiKakuGo-W5", 12)
+        info_y = curr_y - 210
+        pdf.drawString(70, info_y, "参加者署名")
+        pdf.drawString(90, info_y - 30, f"住所: {addr}")
+        pdf.drawString(90, info_y - 60, f"氏名: {u_name}")
+        pdf.drawString(350, info_y - 60, f"血液型: {u_blood}")
+        pdf.drawString(90, info_y - 90, f"電話: {u_phone}")
+        pdf.drawString(90, info_y - 120, f"緊急連絡先: {u_emergency}")
+        
+        parent_y = info_y - 170
+        pdf.drawString(70, parent_y, "親権者署名(未成年参加者は必須)")
+        pdf.drawString(90, parent_y - 30, f"住所: {p_addr}")
+        pdf.drawString(90, parent_y - 60, f"氏名: {p_name}")
+        pdf.drawString(90, parent_y - 90, f"電話: {p_phone}")
+        
+        # プライバシーポリシー
+        pdf.setFont("HeiseiKakuGo-W5", 9)
+        policy = "※本フォームで取得した個人情報は、本練習会の運営および緊急時の連絡以外の目的には使用いたしません。"
+        pdf.drawString(70, 50, policy)
+        
+        pdf.showPage()
+        pdf.save()
+        
+        st.success("申込手続きが完了しました。")
+        st.download_button(
+            label="誓約書PDFを保存する", 
+            data=buf.getvalue(), 
+            file_name=f"GTS誓約書_{u_name}.pdf", 
+            mime="application/pdf"
+        )
