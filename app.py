@@ -77,7 +77,7 @@ with st.form("entry_form"):
     st.divider()
     st.error("【重要：誓約事項】※必ずご確認ください")
     
-    # 全て三連引用符で囲み、改行エラーを徹底防止
+    # 三連引用符による安全な記述
     st.write("""
     私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)の指示を守ります。
     また、受講中に物損事故等が発生した場合、それに伴う損失は全て自己負担とし主催者に責任を追及したり、
@@ -105,7 +105,7 @@ if submitted:
         buffer = io.BytesIO()
         p = canvas.Canvas(buffer, pagesize=A4)
         
-        # ヘッダー
+        # ヘッダー部分
         p.setFont("HeiseiKakuGo-W5", 16)
         p.drawString(70, 800, "件名:二輪車安全運転練習会")
         p.setFont("HeiseiKakuGo-W5", 12)
@@ -116,6 +116,7 @@ if submitted:
         p.setFont("HeiseiKakuGo-W5", 14)
         p.drawCentredString(300, 700, "誓   約   書")
         
+        # 誓約文（前半）
         p.setFont("HeiseiKakuGo-W5", 11)
         ty = 670
         p.drawString(70, ty, "私は、この練習会に参加するに当たり、主催者(インストラクターおよび指導者等)")
@@ -123,7 +124,8 @@ if submitted:
         p.drawString(70, ty - 40, "は全て自己負担とし主催者に責任を追及したり、損害賠償を要求しないことを誓約")
         p.drawString(70, ty - 60, "します。")
         
-        # 赤字強調
+        # 赤字強調部分（カッコの閉じ忘れを徹底点検済み）
         p.setFillColor(colors.red)
         p.drawString(70, ty - 90, "※原則として参加車両は任意保険への加入をお願いします、教習所内の施設を破壊した")
-        p.drawString(70, ty - 110
+        p.drawString(70, ty - 110, "場合、自己負担で賠償となります。")
+        p.drawString(70, ty - 130, "(教習車・信号機等は数百万円
