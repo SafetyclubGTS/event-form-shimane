@@ -11,7 +11,9 @@ import json
 from datetime import datetime, timedelta, timezone
 
 # --- 設定 ---
-GAS_URL = "https://script.google.com/macros/s/AKfycbxB94Sxkdwg44Apb36p-Ibrne9e5nYDtpgiSImuXjYrl5Tp1L14mVQKYVsjVCn5zUGD/exec"
+# ご提示いただいた新しいGAS URLを反映
+GAS_URL = "https://script.google.com/macros/s/AKfycbyvuFXNBjT8jj3jq7c8O2kUKykTWz0R_32gril1xRsaRFDivIjsy_qccpusQ5b7DJAKKA/exec"
+
 st.set_page_config(page_title="GTS参加申込", page_icon="🏍️")
 pdfmetrics.registerFont(UnicodeCIDFont('HeiseiKakuGo-W5'))
 
@@ -27,13 +29,13 @@ def get_address(zipcode):
             d = res.json()
             if d["results"]:
                 r = d["results"][0]
-                # 市区町村・町名までを返す
+                # 市区町村・町名までを自動入力用に返す
                 return f"{r['address1']}{r['address2']}{r['address3']}"
         except:
             return ""
     return ""
 
-# --- 誓約文 ---
+# --- 誓約文（原本通り・一字一句復元） ---
 S1 = "私は、この練習会に参加するに当たり,主催者(インストラクターおよび指導者等)の指示を守ります。"
 S2 = "また、受講中に物損事故等が発生した場合、それに伴う損失は全て自己負担とし、"
 S3 = "主催者に責任を追及したり、損害賠償を要求しないことを誓約します。"
@@ -49,15 +51,20 @@ if "auto_addr" not in st.session_state:
     st.session_state.auto_addr = ""
 
 st.subheader("【開催日】")
+# 日本時刻での現在日時を取得して初期値に設定
 n = datetime.now(JST)
 c1, c2, c3 = st.columns(3)
 with c1:
+    # 2026年から2036年までを選択可能
     sy = st.selectbox("年", list(range(2026, 2037)), index=0)
 with c2:
     sm = st.selectbox("月", list(range(1, 13)), index=(n.month - 1))
 with c3:
     sd = st.selectbox("日", list(range(1, 32)), index=(n.day - 1))
-ev_date = f"令和{sy - 2018}年 {sm}月 {sd}日"
+
+# GASのフォルダ名用(YYYY-MM-DD)とPDF印字用(和暦)
+ev_date_folder = f"{sy}-{sm:02d}-{sd:02d}"
+ev_date_jp = f"令和{sy - 2018}年 {sm}月 {sd}日"
 
 st.subheader("【基本情報】")
 z_in = st.text_input("郵便番号（7桁）", max_chars=7, placeholder="6900000")
@@ -65,7 +72,7 @@ if st.button("住所を自動入力"):
     st.session_state.auto_addr = get_address(z_in)
 
 with st.form("main_form"):
-    # 修正箇所: 住所入力欄の分割
+    # 住所入力欄を分割（市区町村・町名 / 番地・建物名）
     u_ad1 = st.text_input("住所1（市区町村・町名）", value=st.session_state.auto_addr, placeholder="島根県松江市打出町")
     u_ad2 = st.text_input("住所2（番地・建物名）", placeholder="◯番地 ◯◯マンション 101号")
     
@@ -85,12 +92,8 @@ with st.form("main_form"):
     
     st.divider()
     st.error("【重要：誓約事項】")
-    st.write(S1)
-    st.write(S2)
-    st.write(S3)
-    st.write(f":red[{W1}]")
-    st.write(f":red[{W2}]")
-    st.write(f":red[{W3}]")
+    st.write(S1); st.write(S2); st.write(S3)
+    st.write(f":red[{W1}]"); st.write(f":red[{W2}]"); st.write(f":red[{W3}]")
     st.info(P1)
     
     agree = st.checkbox("誓約事項および個人情報の取り扱いに同意し、申し込みます")
@@ -100,6 +103,7 @@ if submit:
     if not agree or not u_na or not u_ad1:
         st.error("氏名、住所、同意チェックは必須です。")
     else:
+        # 送信時の日本時刻を取得
         now = datetime.now(JST)
         ts = now.strftime("%Y-%m-%d %H:%M:%S")
         eid = now.strftime("%Y%m%d-%H%M%S")
@@ -109,18 +113,14 @@ if submit:
         pdf = canvas.Canvas(buf, pagesize=A4)
         pdf.setFont("HeiseiKakuGo-W5", 14)
         pdf.drawString(70, 800, "件名: GTS二輪車安全運転練習会")
-        pdf.drawString(70, 780, f"開催日: {ev_date}")
+        pdf.drawString(70, 780, f"開催日: {ev_date_jp}")
         pdf.drawCentredString(300, 720, "誓   約   書")
         
         pdf.setFont("HeiseiKakuGo-W5", 11)
-        pdf.drawString(70, 680, S1)
-        pdf.drawString(70, 660, S2)
-        pdf.drawString(70, 640, S3)
+        pdf.drawString(70, 680, S1); pdf.drawString(70, 660, S2); pdf.drawString(70, 640, S3)
         
         pdf.setFillColor(colors.red)
-        pdf.drawString(70, 610, W1)
-        pdf.drawString(70, 590, W2)
-        pdf.drawString(70, 570, W3)
+        pdf.drawString(70, 610, W1); pdf.drawString(70, 590, W2); pdf.drawString(70, 570, W3)
         
         pdf.setFillColor(colors.black)
         pdf.drawString(70, 530, f"令和 {now.year-2018} 年 {now.month} 月 {now.day} 日")
@@ -134,19 +134,25 @@ if submit:
         
         pdf.setFont("HeiseiKakuGo-W5", 8)
         pdf.drawString(70, 60, P1)
+        # 完了日時（タイムスタンプ）のみを印字
         pdf.drawString(70, 40, f"完了日時: {ts}")
         
-        pdf.showPage()
-        pdf.save()
+        pdf.showPage(); pdf.save()
         pb = buf.getvalue()
         
         try:
             b64 = base64.b64encode(pb).decode('utf-8')
             f_n = f"誓約書_{u_na}_{eid}.pdf"
-            p_l = {"fileName": f_n, "pdfData": b64}
+            # GASに送るパラメータ（ファイル名、PDF、開催日、氏名）
+            p_l = {
+                "fileName": f_n, 
+                "pdfData": b64, 
+                "evDate": ev_date_folder, 
+                "uName": u_na
+            }
             requests.post(GAS_URL, data=json.dumps(p_l), headers={'Content-Type': 'application/json'}, timeout=30)
-            st.success("申込完了！")
+            st.success("申込完了！Googleドライブへ保存されました。")
         except:
-            st.error("保存失敗。手動で保存してください。")
+            st.error("自動保存に失敗しました。以下のボタンからPDFをダウンロードして保管してください。")
         
         st.download_button(label="PDFを保存", data=pb, file_name=f"GTS_{u_na}_{eid}.pdf", mime="application/pdf")
