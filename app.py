@@ -52,7 +52,8 @@ st.subheader("【開催日】")
 n = datetime.now(JST)
 c1, c2, c3 = st.columns(3)
 with c1:
-    sy = st.selectbox("年", [2026, 2027], index=0)
+    # 修正箇所: 2026年から2036年までを選択可能に
+    sy = st.selectbox("年", list(range(2026, 2037)), index=0)
 with c2:
     sm = st.selectbox("月", list(range(1, 13)), index=(n.month - 1))
 with c3:
