@@ -28,7 +28,7 @@ PLEDGE_TEXT = """私は、この練習会に参加するに当たり,主催者(�
 教習所内の施設を破壊した場合、自己負担で賠償となります。
 (教習車・信号機等は数百万円の賠償となります)"""
 
-P1 = "※取得した個人情報は、運営および緊急連絡以外の目的には使用いたしません。"
+P1 = "※本フォームで取得した個人情報は、本練習会の運営及び緊急時の連絡以外の目的には使用いたしません。"
 
 # =========================
 # ユーティリティ
@@ -42,6 +42,11 @@ def safe_filename(s):
 def to_reiwa(dt):
     y = dt.year - 2018
     return f"令和{y if y>1 else '元'}年 {dt.month}月 {dt.day}日"
+
+def to_reiwa_datetime(dt):
+    y = dt.year - 2018
+    era = f"令和{y if y>1 else '元'}年"
+    return f"{era} {dt.month}月 {dt.day}日 {dt.hour}時{dt.minute}分{dt.second}秒"
 
 def get_address(zipcode):
     if not is_valid_zip(zipcode): return ""
@@ -66,7 +71,6 @@ def create_pdf(data):
 
     jp = ParagraphStyle(name='JP', fontName='HeiseiKakuGo-W5', fontSize=11, leading=16, wordWrap='CJK')
     title = ParagraphStyle(name='Title', fontName='HeiseiKakuGo-W5', fontSize=16, alignment=1)
-    red = ParagraphStyle(name='Red', fontName='HeiseiKakuGo-W5', fontSize=10, textColor=colors.red)
 
     story = []
 
@@ -77,7 +81,6 @@ def create_pdf(data):
 
     story.append(Paragraph("【誓約事項】", jp))
 
-    # 誓約文（1行ずつ厳密表示）
     for line in PLEDGE_TEXT.split("\n"):
         story.append(Paragraph(line, jp))
 
@@ -105,6 +108,9 @@ def create_pdf(data):
 
     story.append(Spacer(1, 20))
     story.append(Paragraph(P1, ParagraphStyle(name='Small', fontName='HeiseiKakuGo-W5', fontSize=8)))
+    story.append(Spacer(1, 5))
+    story.append(Paragraph(f"送信日時：{data['timestamp']}（日本標準時）",
+                           ParagraphStyle(name='Small2', fontName='HeiseiKakuGo-W5', fontSize=8)))
 
     doc.build(story)
     return buf.getvalue()
@@ -118,7 +124,6 @@ st.title("🏍️ GTS練習会 申込")
 if "addr_input" not in st.session_state:
     st.session_state.addr_input = ""
 
-# 郵便番号
 c1, c2 = st.columns([2,1])
 with c1:
     zipc = st.text_input("郵便番号", placeholder="6900000")
@@ -131,8 +136,8 @@ with st.form("form"):
     ev_date = st.date_input("開催日", value=datetime.now(JST))
 
     addr1 = st.text_input("住所（市区町村・町名）", value=st.session_state.addr_input)
-    addr2 = st.text_input("番地", placeholder="例：1-2-3")
-    addr3 = st.text_input("建物名・部屋番号", placeholder="任意")
+    addr2 = st.text_input("番地")
+    addr3 = st.text_input("建物名・部屋番号")
 
     u_name = st.text_input("氏名")
     blood = st.selectbox("血液型", ["", "A", "B", "O", "AB"])
@@ -174,6 +179,7 @@ if submit:
             "date": ev_date.strftime("%Y-%m-%d"),
             "date_jp": to_reiwa(ev_date),
             "sign": to_reiwa(now),
+            "timestamp": to_reiwa_datetime(now),
             "addr": full_addr,
             "name": u_name,
             "blood": blood,
@@ -194,12 +200,8 @@ if submit:
                 "uName": u_name
             }
 
-            res = requests.post(
-                GAS_URL,
-                data=json.dumps(payload),
-                headers={"Content-Type":"application/json"},
-                timeout=20
-            )
+            res = requests.post(GAS_URL, data=json.dumps(payload),
+                                headers={"Content-Type":"application/json"}, timeout=20)
 
             if res.status_code == 200:
                 try:
