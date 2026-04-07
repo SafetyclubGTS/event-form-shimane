@@ -19,15 +19,14 @@ pdfmetrics.registerFont(UnicodeCIDFont('HeiseiKakuGo-W5'))
 JST = timezone(timedelta(hours=9))
 
 # =========================
-# 誓約文（変更禁止）
+# 誓約文（絶対固定）
 # =========================
-S1 = "私は、主催者の指示を守り、自己の判断と責任において安全運転に努めます。"
-S2 = "現在、走行に支障のある疾患や負傷はなく、体調万全である事を確認の上で参加します。"
-S3 = "事故（車両破損・負傷等）は全て自己負担とし、理由の如何を問わず主催者に責任を追及しません。"
-
-W1 = "※任意保険未加入車両での参加は固くお断りいたします。"
-W2 = "施設・機材（信号機・教習車等）を損壊した場合は、実費での全額賠償となります。"
-W3 = "【重要】未成年の方は、必ず以下の「親権者署名」欄も入力してください。"
+PLEDGE_TEXT = """私は、この練習会に参加するに当たり,主催者(インストラクターおよび指導者等)の指示を守ります。
+また、受講中に物損事故等が発生した場合、それに伴う損失は全て自己負担とし、
+主催者に責任を追及したり、損害賠償を要求しないことを誓約します。
+※原則として参加車両は任意保険への加入をお願いします。
+教習所内の施設を破壊した場合、自己負担で賠償となります。
+(教習車・信号機等は数百万円の賠償となります)"""
 
 P1 = "※取得した個人情報は、運営および緊急連絡以外の目的には使用いたしません。"
 
@@ -57,7 +56,7 @@ def get_address(zipcode):
     return ""
 
 # =========================
-# PDF生成（署名欄なし）
+# PDF生成
 # =========================
 def create_pdf(data):
     buf = io.BytesIO()
@@ -65,7 +64,7 @@ def create_pdf(data):
                             leftMargin=20*mm, rightMargin=20*mm,
                             topMargin=15*mm, bottomMargin=15*mm)
 
-    jp = ParagraphStyle(name='JP', fontName='HeiseiKakuGo-W5', fontSize=11, leading=16)
+    jp = ParagraphStyle(name='JP', fontName='HeiseiKakuGo-W5', fontSize=11, leading=16, wordWrap='CJK')
     title = ParagraphStyle(name='Title', fontName='HeiseiKakuGo-W5', fontSize=16, alignment=1)
     red = ParagraphStyle(name='Red', fontName='HeiseiKakuGo-W5', fontSize=10, textColor=colors.red)
 
@@ -77,22 +76,18 @@ def create_pdf(data):
     story.append(Spacer(1, 10))
 
     story.append(Paragraph("【誓約事項】", jp))
-    story.append(Paragraph(f"1. {S1}", jp))
-    story.append(Paragraph(f"2. {S2}", jp))
-    story.append(Paragraph(f"3. {S3}", jp))
 
-    story.append(Spacer(1, 10))
-    story.append(Paragraph(W1, red))
-    story.append(Paragraph(W2, red))
-    story.append(Paragraph(W3, red))
+    # 誓約文（1行ずつ厳密表示）
+    for line in PLEDGE_TEXT.split("\n"):
+        story.append(Paragraph(line, jp))
 
     story.append(Spacer(1, 20))
 
     table = Table([
-        ["署名日", data["sign"]],
-        ["住所", data["addr"]],
-        ["氏名", f"{data['name']} (血液型:{data['blood']})"],
-        ["連絡先", f"本人:{data['phone']} / 緊急:{data['emergency']}"],
+        [Paragraph("署名日", jp), Paragraph(data["sign"], jp)],
+        [Paragraph("住所", jp), Paragraph(data["addr"], jp)],
+        [Paragraph("氏名", jp), Paragraph(f"{data['name']} (血液型:{data['blood']})", jp)],
+        [Paragraph("連絡先", jp), Paragraph(f"本人:{data['phone']} / 緊急:{data['emergency']}", jp)],
     ], colWidths=[30*mm, 140*mm])
 
     table.setStyle(TableStyle([("GRID",(0,0),(-1,-1),0.5,colors.black)]))
@@ -102,8 +97,8 @@ def create_pdf(data):
         story.append(Spacer(1, 15))
         story.append(Paragraph("【親権者署名】 ※未成年の場合必須", jp))
         p_table = Table([
-            ["住所", data["p_addr"]],
-            ["氏名", data["p_name"]],
+            [Paragraph("住所", jp), Paragraph(data["p_addr"], jp)],
+            [Paragraph("氏名", jp), Paragraph(data["p_name"], jp)],
         ], colWidths=[30*mm, 140*mm])
         p_table.setStyle(TableStyle([("GRID",(0,0),(-1,-1),0.5,colors.black)]))
         story.append(p_table)
@@ -123,6 +118,7 @@ st.title("🏍️ GTS練習会 申込")
 if "addr_input" not in st.session_state:
     st.session_state.addr_input = ""
 
+# 郵便番号
 c1, c2 = st.columns([2,1])
 with c1:
     zipc = st.text_input("郵便番号", placeholder="6900000")
@@ -133,22 +129,26 @@ with c2:
 
 with st.form("form"):
     ev_date = st.date_input("開催日", value=datetime.now(JST))
-    age = st.number_input("年齢", 0, 120)
 
-    addr = st.text_input("住所", value=st.session_state.addr_input)
+    addr1 = st.text_input("住所（市区町村・町名）", value=st.session_state.addr_input)
+    addr2 = st.text_input("番地", placeholder="例：1-2-3")
+    addr3 = st.text_input("建物名・部屋番号", placeholder="任意")
+
     u_name = st.text_input("氏名")
     blood = st.selectbox("血液型", ["", "A", "B", "O", "AB"])
     u_phone = st.text_input("電話番号")
     u_emer = st.text_input("緊急連絡先")
 
-    st.info("未成年のみ入力")
+    is_minor = st.checkbox("未成年（18歳未満）の方はこちらにチェック")
+
+    st.info("未成年の方のみ入力してください")
     p_addr = st.text_input("親権者住所")
     p_name = st.text_input("親権者氏名")
 
-    st.markdown(f"1. {S1}\n2. {S2}\n3. {S3}")
-    st.warning(f"{W1}\n\n{W2}\n\n{W3}")
+    st.subheader("誓約事項")
+    st.text(PLEDGE_TEXT)
 
-    agree = st.checkbox("同意する")
+    agree = st.checkbox("上記誓約事項に同意します")
     submit = st.form_submit_button("送信")
 
 # =========================
@@ -156,23 +156,25 @@ with st.form("form"):
 # =========================
 if submit:
 
-    if not agree or not u_name or not addr or not u_phone:
+    if not agree or not u_name or not addr1 or not addr2 or not u_phone:
         st.error("必須項目を入力してください")
 
     elif not is_valid_phone(u_phone):
         st.error("電話番号形式エラー")
 
-    elif age < 18 and (not p_name or not p_addr):
+    elif is_minor and (not p_name or not p_addr):
         st.error("未成年は親権者情報が必要です")
 
     else:
         now = datetime.now(JST)
 
+        full_addr = f"{addr1} {addr2} {addr3}".strip()
+
         data = {
             "date": ev_date.strftime("%Y-%m-%d"),
             "date_jp": to_reiwa(ev_date),
             "sign": to_reiwa(now),
-            "addr": addr,
+            "addr": full_addr,
             "name": u_name,
             "blood": blood,
             "phone": u_phone,
